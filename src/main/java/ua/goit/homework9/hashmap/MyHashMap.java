@@ -107,7 +107,6 @@ public class MyHashMap<K, V> {
                 put(temp.key, temp.value);
             }
         }
-        System.out.println("HashMap resized! new size of table is: " + table.length);
     }
 
     @Override

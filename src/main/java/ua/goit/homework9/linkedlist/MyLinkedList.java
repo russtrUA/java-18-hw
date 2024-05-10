@@ -4,19 +4,19 @@ import java.util.StringJoiner;
 
 public class MyLinkedList<T> {
     private Node head;
-    private Node trail;
+    private Node tail;
     private int length;
     public void add(T value) {
         Node item = new Node(value);
         length++;
         if (head == null) {
             head = item;
-            trail = item;
+            tail = item;
             return;
         }
-        trail.next = item;
-        item.prev = trail;
-        trail = item;
+        tail.next = item;
+        item.prev = tail;
+        tail = item;
 //        Node temp = head;
 //        while (temp.next != null) {
 //            temp = temp.next;
@@ -30,7 +30,7 @@ public class MyLinkedList<T> {
     public void clear() {
         length = 0;
         head = null;
-        trail = null;
+        tail = null;
     }
 
     @Override
@@ -48,7 +48,7 @@ public class MyLinkedList<T> {
             throw new IndexOutOfBoundsException("Size is: " + length);
         if (index > length / 2) {
             index = length - index - 1;
-            Node current = trail;
+            Node current = tail;
             for (int i = 0; i < index; i++) {
                 current = current.prev;
             }
@@ -67,9 +67,9 @@ public class MyLinkedList<T> {
 
     public T remove(int index) {
         Node nodeToRemove = getByIndex(index);
-        if(index == 0 && head == trail) {
+        if(index == 0 && head == tail) {
             head = null;
-            trail = null;
+            tail = null;
             length--;
             return nodeToRemove.value;
         }
@@ -81,8 +81,8 @@ public class MyLinkedList<T> {
             return nodeToRemove.value;
         }
         if (index == length - 1) {
-            trail.prev.next = null;
-            trail = trail.prev;
+            tail.prev.next = null;
+            tail = tail.prev;
             nodeToRemove.prev = null;
             length--;
             return nodeToRemove.value;

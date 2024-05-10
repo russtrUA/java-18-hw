@@ -4,19 +4,19 @@ import java.util.StringJoiner;
 
 public class MyQueue<T> {
     private Node head;
-    private Node trail;
+    private Node tail;
     private int length;
     public void add(T value) {
         Node item = new Node(value);
         length++;
         if (head == null) {
             head = item;
-            trail = item;
+            tail = item;
             return;
         }
-        trail.next = item;
-        item.prev = trail;
-        trail = item;
+        tail.next = item;
+        item.prev = tail;
+        tail = item;
     }
     public int size() {
         return length;
@@ -24,7 +24,7 @@ public class MyQueue<T> {
     public void clear() {
         length = 0;
         head = null;
-        trail = null;
+        tail = null;
     }
 
     @Override
@@ -52,7 +52,7 @@ public class MyQueue<T> {
             nodeToRemove.next = null;
         } else {
             head = null;
-            trail = null;
+            tail = null;
         }
         length--;
         return nodeToRemove.value;

@@ -4,7 +4,7 @@ import java.util.StringJoiner;
 
 public class MyStack<T> {
     private Node head;
-    private Node trail;
+    private Node tail;
     private int length;
 
     public void push(T value) {
@@ -12,12 +12,12 @@ public class MyStack<T> {
         length++;
         if (head == null) {
             head = item;
-            trail = item;
+            tail = item;
             return;
         }
-        trail.next = item;
-        item.prev = trail;
-        trail = item;
+        tail.next = item;
+        item.prev = tail;
+        tail = item;
     }
 
     public int size() {
@@ -27,7 +27,7 @@ public class MyStack<T> {
     public void clear() {
         length = 0;
         head = null;
-        trail = null;
+        tail = null;
     }
 
     @Override
@@ -46,7 +46,7 @@ public class MyStack<T> {
             throw new IndexOutOfBoundsException("Size is: " + length);
         if (index > length / 2) {
             index = length - index - 1;
-            Node current = trail;
+            Node current = tail;
             for (int i = 0; i < index; i++) {
                 current = current.prev;
             }
@@ -62,9 +62,9 @@ public class MyStack<T> {
 
     public T remove(int index) {
         Node nodeToRemove = getByIndex(index);
-        if (index == 0 && head == trail) {
+        if (index == 0 && head == tail) {
             head = null;
-            trail = null;
+            tail = null;
             length--;
             return nodeToRemove.value;
         }
@@ -76,8 +76,8 @@ public class MyStack<T> {
             return nodeToRemove.value;
         }
         if (index == length - 1) {
-            trail.prev.next = null;
-            trail = trail.prev;
+            tail.prev.next = null;
+            tail = tail.prev;
             nodeToRemove.prev = null;
             length--;
             return nodeToRemove.value;
@@ -93,20 +93,20 @@ public class MyStack<T> {
     public T peek() {
         if (length == 0)
             return null;
-        return trail.value;
+        return tail.value;
     }
 
     public T pop() {
         if (length == 0)
             return null;
-        Node nodeToRemove = trail;
-        if (trail.prev != null) {
-            trail.prev.next = null;
-            trail = trail.prev;
+        Node nodeToRemove = tail;
+        if (tail.prev != null) {
+            tail.prev.next = null;
+            tail = tail.prev;
             nodeToRemove.prev = null;
         } else {
             head = null;
-            trail = null;
+            tail = null;
         }
         length--;
         return nodeToRemove.value;
