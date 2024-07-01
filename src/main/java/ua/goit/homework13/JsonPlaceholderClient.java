@@ -6,9 +6,6 @@ import com.google.gson.reflect.TypeToken;
 import ua.goit.homework13.dto.Post;
 import ua.goit.homework13.dto.Task;
 import ua.goit.homework13.dto.User;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
@@ -16,78 +13,37 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
-import java.util.Optional;
+
+import static ua.goit.homework13.Constants.*;
+import static ua.goit.homework13.Utils.writeToFile;
+
 
 public class JsonPlaceholderClient implements JsonPlaceholderService {
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().build();
-    private static final String USERS_URL = "https://jsonplaceholder.typicode.com/users";
-    private static final String POSTS_URL = "https://jsonplaceholder.typicode.com/posts";
+
     private static final Gson JSON = new GsonBuilder().setPrettyPrinting().create();
 
     @Override
-    public Optional<User> getUserById(int id) {
+    public User getUserById(int id) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(USERS_URL + "/" + id))
+                    .uri(URI.create(BASE_URL + USERS + DELIMITER + id))
                     .GET()
                     .build();
             HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
             String body = response.body();
-            return Optional.of(JSON.fromJson(body, User.class));
+            return JSON.fromJson(body, User.class);
         } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
-        return Optional.empty();
+        return null;
     }
-
-    private Optional<User> createOrUpdateUser(User user, String method) {
+    private List<User> getUsers(String... userNames) {
         try {
-            String url = method.equals("PUT") ? (USERS_URL + "/" + user.getId()) : USERS_URL;
+            String url = userNames.length == 0 ? BASE_URL + USERS
+                    : BASE_URL + USERS + QUESTION_MARK + USER_NAME + EQUALS_SIGN + userNames[0];
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
-                    .method(method, HttpRequest.BodyPublishers.ofString(JSON.toJson(user)))
-                    .header("Content-type", "application/json; charset=UTF-8")
-                    .build();
-            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-            String body = response.body();
-            return Optional.of(JSON.fromJson(body, User.class));
-        } catch (InterruptedException | IOException e) {
-            e.printStackTrace();
-        }
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<User> createUser(User user) {
-        return createOrUpdateUser(user, "POST");
-    }
-
-    @Override
-    public Optional<User> updateUser(User user) {
-        return createOrUpdateUser(user, "PUT");
-    }
-
-    @Override
-    public int deleteUser(User user) {
-        int responseCode = 0;
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(USERS_URL + "/" + user.getId()))
-                    .GET()
-                    .build();
-            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-            responseCode = response.statusCode();
-        } catch (InterruptedException | IOException e) {
-            e.printStackTrace();
-        }
-        return responseCode;
-    }
-
-    @Override
-    public List<User> getAllUsers() {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(USERS_URL))
                     .GET()
                     .build();
             HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
@@ -100,30 +56,70 @@ public class JsonPlaceholderClient implements JsonPlaceholderService {
         }
         return List.of();
     }
+    @Override
+    public List<User> getUsersByName(String userName) {
+        return getUsers(userName);
+    }
 
     @Override
-    public Optional<User> getUserByUserName(String userName) {
+    public List<User> getAllUsers() {
+        return getUsers();
+    }
+
+    @Override
+    public User createUser(User user) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(USERS_URL + "?username=" + userName))
-                    .GET()
+                    .uri(URI.create(BASE_URL + USERS))
+                    .POST(HttpRequest.BodyPublishers.ofString(JSON.toJson(user)))
+                    .header("Content-type", "application/json; charset=UTF-8")
                     .build();
             HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
             String body = response.body();
-            Type listType = new TypeToken<List<User>>() {
-            }.getType();
-            List<User> list = JSON.fromJson(body, listType);
-            return Optional.of(list.getFirst());
+            return JSON.fromJson(body, User.class);
         } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
-        return Optional.empty();
+        return null;
     }
 
-    private List<Post> getUserPosts(User user) {
+    @Override
+    public User updateUser(User user) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(USERS_URL + "/" + user.getId() + "/posts"))
+                    .uri(URI.create(BASE_URL + USERS + DELIMITER + user.getId()))
+                    .PUT(HttpRequest.BodyPublishers.ofString(JSON.toJson(user)))
+                    .header("Content-type", "application/json; charset=UTF-8")
+                    .build();
+            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+            String body = response.body();
+            return JSON.fromJson(body, User.class);
+        } catch (InterruptedException | IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public int deleteUser(int userId) {
+        int responseCode = 0;
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(BASE_URL + USERS + DELIMITER + userId))
+                    .DELETE()
+                    .build();
+            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+            responseCode = response.statusCode();
+        } catch (InterruptedException | IOException e) {
+            e.printStackTrace();
+        }
+        return responseCode;
+    }
+
+    private List<Post> getUserPosts(int userId) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(BASE_URL + USERS + DELIMITER + userId + DELIMITER + POSTS))
                     .GET()
                     .build();
             HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
@@ -137,39 +133,40 @@ public class JsonPlaceholderClient implements JsonPlaceholderService {
         return List.of();
     }
 
-    private Optional<String> getCommentsByPostId(int postId) {
+    private String getCommentsByPostId(int postId) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(POSTS_URL + "/" + postId + "/comments"))
+                    .uri(URI.create(BASE_URL + POSTS + DELIMITER + postId + DELIMITER + COMMENTS))
                     .GET()
                     .build();
             HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
             String body = response.body();
-            return Optional.of(body);
+            return body;
         } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
-        return Optional.empty();
+        return null;
     }
 
     @Override
-    public void printCommentsAndWriteToFile(User user) {
-        List<Post> userPosts = getUserPosts(user);
+    public String writeAndGetLastCommentsForUser(int userId) {
+        List<Post> userPosts = getUserPosts(userId);
         Integer maxPostId = userPosts.stream()
                 .map(Post::getId)
                 .max(Integer::compareTo)
                 .orElseThrow();
-        String commentsByPostId = getCommentsByPostId(maxPostId).orElseThrow();
-        String filePath = "./files/hw13_task2/user-" + user.getId() + "-post-" + maxPostId + "-comments.json";
+        String commentsByPostId = getCommentsByPostId(maxPostId);
+        String filePath = FILE_TEMPLATE.replace("{USER_ID}", String.valueOf(userId))
+                .replace("{POST_ID}", String.valueOf(maxPostId));
         writeToFile(commentsByPostId, filePath);
-        System.out.println("commentsByPostId = " + commentsByPostId);
+        return commentsByPostId;
     }
 
     @Override
-    public List<Task> getActiveTasks(User user) {
+    public List<Task> getActiveTasks(int userId) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(USERS_URL + "/" + user.getId() + "/todos"))
+                    .uri(URI.create(BASE_URL + USERS + DELIMITER + userId + DELIMITER + TODOS))
                     .GET()
                     .build();
             HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
@@ -185,13 +182,4 @@ public class JsonPlaceholderClient implements JsonPlaceholderService {
         }
         return List.of();
     }
-
-    private void writeToFile(String commentsByPostId, String filePath) {
-        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(filePath))) {
-            bufferedWriter.write(commentsByPostId);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
 }
